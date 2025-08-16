@@ -140,50 +140,35 @@ int count_words(const char src[])
 
 char **tokenize(const char data[])
 {
-    if (!data)
-        return nullptr;
+    if (!data) return nullptr;
 
-    int maxTokens = 1000;
-    char **tokens = new char *[maxTokens];
+    const int maxTokens = 1000;
+    char **tokens = new char*[maxTokens];
     int count = 0;
+
+    int len = strlength(data);
     int i = 0;
 
-    while (data[i] != '\0' && count < maxTokens - 1)
-    {
-        while (data[i] == ' ' || data[i] == ',' || data[i] == '\n')
-        {
-            i++;
+    while (i < len && count < maxTokens - 1) {
+        while (i < len && !( (data[i] >= 'A' && data[i] <= 'Z') ||
+                             (data[i] >= 'a' && data[i] <= 'z') ||
+                             (data[i] >= '0' && data[i] <= '9') )) {
+            ++i;
         }
+        if (i >= len) break;
 
-        if (data[i] != '\0')
-        {
-            char word[100];
-            int wordcount = 0;
-
-            while (data[i] != '\0' && data[i] != ' ' && data[i] != ',' && data[i] != '\n')
-            {
-                if (wordcount < 99)
-                {
-                    word[wordcount++] = data[i++];
-                }
-                else
-                {
-                    i++;
-                }
-            }
-
-            word[wordcount] = '\0';
-
-            tokens[count] = new char[wordcount + 1];
-            for (int j = 0; j <= wordcount; j++)
-            {
-                tokens[count][j] = word[j];
-            }
-
-            count++;
+        int start = i;
+        while (i < len && ( (data[i] >= 'A' && data[i] <= 'Z') ||
+                            (data[i] >= 'a' && data[i] <= 'z') ||
+                            (data[i] >= '0' && data[i] <= '9') )) {
+            ++i;
         }
+        int wlen = i - start;
+        tokens[count] = new char[wlen + 1];
+        for (int k = 0; k < wlen; ++k) tokens[count][k] = data[start + k];
+        tokens[count][wlen] = '\0';
+        count++;
     }
-
     tokens[count] = nullptr;
     return tokens;
 }
@@ -308,9 +293,160 @@ char *to_lowercase(const char *word) {
 
 bool is_stop_word(const char *word) {
     const char *stopWords[] = {
-        "the", "is", "in", "and", "or", "of", "to", "a", "an", "for", "on", "at", "by", "this",
-        "that", "with", "from", "as", "it", "are", "was", "were", "be", "has", "have", "had",
-        "but", "not", "so", "if", "then", "else", "which", "what", "when", "where", "who", "whom"
+        "nbsp",
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "be",
+    "by",
+    "for",
+    "from",
+    "has",
+    "he",
+    "in",
+    "is",
+    "it",
+    "its",
+    "of",
+    "on",
+    "that",
+    "the",
+    "to",
+    "was",
+    "will",
+    "with",
+    "would",
+    "you",
+    "your",
+    "have",
+    "had",
+    "this",
+    "these",
+    "they",
+    "them",
+    "their",
+    "there",
+    "then",
+    "than",
+    "or",
+    "but",
+    "not",
+    "can",
+    "could",
+    "should",
+    "would",
+    "may",
+    "might",
+    "must",
+    "shall",
+    "will",
+    "do",
+    "does",
+    "did",
+    "done",
+    "been",
+    "being",
+    "about",
+    "after",
+    "all",
+    "also",
+    "any",
+    "because",
+    "before",
+    "both",
+    "but",
+    "each",
+    "even",
+    "first",
+    "her",
+    "here",
+    "him",
+    "his",
+    "how",
+    "if",
+    "into",
+    "just",
+    "like",
+    "make",
+    "many",
+    "me",
+    "more",
+    "most",
+    "my",
+    "new",
+    "no",
+    "now",
+    "only",
+    "other",
+    "our",
+    "out",
+    "over",
+    "said",
+    "same",
+    "see",
+    "she",
+    "so",
+    "some",
+    "such",
+    "take",
+    "time",
+    "two",
+    "up",
+    "use",
+    "very",
+    "way",
+    "we",
+    "well",
+    "were",
+    "what",
+    "when",
+    "where",
+    "which",
+    "who",
+    "why",
+    "work",
+    "page",
+    "home",
+    "contact",
+    "about",
+    "services",
+    "products",
+    "news",
+    "blog",
+    "login",
+    "register",
+    "search",
+    "help",
+    "support",
+    "privacy",
+    "terms",
+    "policy",
+    "www",
+    "quot",
+    "http",
+    "https",
+    "com",
+    "org",
+    "net",
+    "edu",
+    "gov",
+    "io",
+    "co",
+    "uk",
+    "us",
+    "info",
+    "site",
+    "online",
+    "web",
+    "page",
+    "html",
+    "www",
+    "www.",
+    "http://",
+    "https://",
     };
     int stopCount = sizeof(stopWords) / sizeof(stopWords[0]);
     for (int i = 0; i < stopCount; ++i) {
@@ -321,95 +457,99 @@ bool is_stop_word(const char *word) {
     return false;
 }
 
+void removeScriptAndStyle(const char *input, char *output)
+{
+    int in_len = strlength(input);
+    int j = 0;
+    bool inside_tag = false;
+    bool inside_script = false;
+    bool inside_style = false;
 
+    for (int i = 0; i < in_len; i++)
+    {
+        if (!inside_script && !inside_style && !inside_tag && strcasestre(&input[i], "<script") == 0)
+        {
+            inside_script = true;
+            while (i < in_len && input[i] != '>')
+                i++;
+            continue;
+        }
 
-// char* give_keyword(const char *text)
-// {
-//     char **tokens = tokenize(text);
-//     if (!tokens)
-//     {
-//         cout << "Tokenization failed." << endl;
-//         return nullptr;
+        if (inside_script && strcasestre(&input[i], "</script>") == 0)
+        {
+            while (i < in_len && input[i] != '>')
+                i++;
+            inside_script = false;
+            continue;
+        }
+
+        if (!inside_script && !inside_style && !inside_tag && strcasestre(&input[i], "<style") == 0)
+        {
+            inside_style = true;
+            while (i < in_len && input[i] != '>')
+                i++;
+            continue;
+        }
+
+        if (inside_style && strcasestre(&input[i], "</style>") == 0)
+        {
+            while (i < in_len && input[i] != '>')
+                i++;
+            inside_style = false;
+            continue;
+        }
+
+        if (!inside_script && !inside_style)
+        {
+            if (input[i] == '<')
+            {
+                inside_tag = true;
+            }
+            else if (input[i] == '>')
+            {
+                inside_tag = false;
+                continue;
+            }
+            else if (!inside_tag)
+            {
+                output[j++] = input[i]; 
+            }
+        }
+    }
+    output[j] = '\0';
+}
+
+void stripHTMLTags(const char *input, char *output)
+{
+    int j = 0;
+    bool inside_tag = false;
+    for (size_t i = 0; input[i] != '\0'; ++i)
+    {
+        if (input[i] == '<') {
+            inside_tag = true;
+            continue;
+        }
+        if (input[i] == '>') {
+            inside_tag = false;
+            continue;
+        }
+        if (!inside_tag) {
+            output[j++] = input[i];
+        }
+    }
+    output[j] = '\0';
+}
+
+// char* escape_url(const char* url) {
+//     int len = strlength(url);
+//     char* escaped = new char[len * 2 + 1];
+//     int j = 0;
+//     for (int i = 0; i < len; i++) {
+//         if (url[i] == '"' || url[i] == '\\') {
+//             escaped[j++] = '\\';
+//         }
+//         escaped[j++] = url[i];
 //     }
-
-//     char* words[1000];
-//     int freq[1000];
-//     int count = 0;
-
-//     for (int i = 0; tokens[i] != nullptr; ++i)
-//     {
-//         if (!is_valid_word(tokens[i]))
-//         {
-//             delete[] tokens[i];
-//             continue;
-//         }
-
-//         char *lower = to_lowercase(tokens[i]);
-//         delete[] tokens[i];
-
-//         if (is_stop_word(lower))
-//         {
-//             delete[] lower;
-//             continue;
-//         }
-
-//         bool found = false;
-//         for (int j = 0; j < count; ++j)
-//         {
-//             if (strcampare(words[j], lower) == 0)
-//             {
-//                 freq[j]++;
-//                 found = true;
-//                 break;
-//             }
-//         }
-
-//         if (!found)
-//         {
-//             if (count >= 1000)
-//             {
-//                 delete[] lower;
-//                 break; 
-//             }
-
-//             words[count] = lower; 
-//             freq[count] = 1;
-//             count++;
-//         }
-//         else
-//         {
-//             delete[] lower;
-//         }
-//     }
-
-//     delete[] tokens;
-
-//     int maxFreq = 0;
-//     int maxIndex = -1;
-//     for (int i = 0; i < count; ++i)
-//     {
-//         if (freq[i] > maxFreq)
-//         {
-//             maxFreq = freq[i];
-//             maxIndex = i;
-//         }
-//     }
-
-//     if (maxIndex != -1)
-//     {
-//         char *result = new char[strlength(words[maxIndex]) + 1];
-//         strcopy(result, words[maxIndex]);
-
-//         for (int i = 0; i < count; ++i)
-//         {
-//             if (i != maxIndex)
-//                 delete[] words[i];
-//         } 
-//         return result;
-//     }
-
-//     for (int i = 0; i < count; ++i)
-//         delete[] words[i];
-
-//     return nullptr;
+//     escaped[j] = '\0';
+//     return escaped;
 // }

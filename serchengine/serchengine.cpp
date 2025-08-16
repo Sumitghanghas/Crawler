@@ -12,10 +12,10 @@ void search::searchUrls(char *keyword)
     char line[500];
   
     ifstream inFile("index");
-
+    char *lowercasekeyword = to_lowercase(keyword);
     if (!inFile.is_open())
     {
-        cout << "Error: Could not open file.\n";
+        cout << "filed to open file.\n";
         return;
     }
 
@@ -26,7 +26,7 @@ void search::searchUrls(char *keyword)
         if (arrowPos != -1)
         {
             line[arrowPos] = '\0';
-            if (strcampare(line, keyword) == 0)
+            if (strcampare(line, lowercasekeyword) == 0)
             {
                 found = true;
                 char *urls = &line[arrowPos + 3];
@@ -39,7 +39,7 @@ void search::searchUrls(char *keyword)
 
     if (!found)
     {
-        cout << "No URLs found for keyword: " << keyword << "\n";
+        cout << "No URLs found for keyword " << keyword << "\n";
     }
 
     inFile.close();
@@ -47,7 +47,7 @@ void search::searchUrls(char *keyword)
 
 int search::searchLink(){
      char line[500];
-    ifstream inFile("index");
+    ifstream inFile("website");
     if (!inFile.is_open()) {
         return 0; 
     }
